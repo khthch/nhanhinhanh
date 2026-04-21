@@ -1,0 +1,270 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -64
+      ],
+      "id": "a222a268-2838-4f4e-9913-3d1dbe2f6eec",
+      "name": "Telegram Trigger",
+      "webhookId": "3e69140d-cc8d-4b1b-9350-ba0d3e291610",
+      "credentials": {
+        "telegramApi": {
+          "id": "I8KKY62gL4KShO5H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "chatId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "number"
+            },
+            {
+              "id": "id-2",
+              "name": "caption",
+              "value": "={{ $json.message.caption || 'edit image' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "fileId",
+              "value": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3758264c-eed4-4e81-b9be-68833b22be47",
+      "name": "Parse Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.fileId }}",
+        "additionalFields": {}
+      },
+      "id": "f0dcc1aa-c27a-43a8-8c38-4292b57ea720",
+      "name": "Get File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        -64
+      ],
+      "webhookId": "83403763-158c-4e59-b17d-6b2b748bb299",
+      "credentials": {
+        "telegramApi": {
+          "id": "I8KKY62gL4KShO5H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "fileName",
+              "value": "=edited_{{ $now.toFormat('yyyyMMdd_HHmmss') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "a66955f9-7f8b-43dd-b24e-749d6c3e695a",
+      "name": "Build File Name",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        496,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.fileName }}.jpg",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "id": "46863c0e-0e5b-404a-b18f-e116144e14ae",
+      "name": "Upload to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        720,
+        -64
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gv7PZO720jW465tv",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Request').item.json.chatId }}",
+        "text": "=✅ Image uploaded to Google Drive!\nFile: {{ $('Build File Name').item.json.fileName }}.jpg\nLink: {{ $('Upload to Drive').item.json.webViewLink }}",
+        "additionalFields": {}
+      },
+      "id": "db1ced91-5ef7-4b00-a5e8-e021c34817ac",
+      "name": "Send Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        -64
+      ],
+      "webhookId": "1ac50510-90fa-4b3f-bf55-2a8c7647325b",
+      "credentials": {
+        "telegramApi": {
+          "id": "I8KKY62gL4KShO5H",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "edit",
+        "prompt": "={{ $('Parse Request').item.json.caption }}",
+        "images": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "098316b9-cfd2-4228-8bc0-3711ccb82256",
+      "name": "Edit Image with AI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        -64
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "gn1Q1fUR9hQFW710",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Request": {
+      "main": [
+        [
+          {
+            "node": "Get File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File": {
+      "main": [
+        [
+          {
+            "node": "Edit Image with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build File Name": {
+      "main": [
+        [
+          {
+            "node": "Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image with AI": {
+      "main": [
+        [
+          {
+            "node": "Build File Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "80a2493c-cf12-4821-bbaf-231ae8dee0b6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e40dc23ba2da5067155b8ded91f82fa80bf7e7771f5c1d5765f72240492b1c56"
+  },
+  "id": "bhV3N1Au3Y4N5MKT",
+  "tags": []
+}
